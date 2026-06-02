@@ -1,0 +1,34 @@
+{
+  "timezone": "Asia/Shanghai",
+  "userLocation": {
+    "type": "approximate",
+    "country": "CN",
+    "timezone": "Asia/Shanghai"
+  },
+  "focusThemes": [
+    "AI",
+    "crypto"
+  ],
+  "frequency": "daily_once_morning",
+  "deliveryTime": "08:30 Asia/Shanghai",
+  "hongKong": [
+    { "ticker": "07747", "name": "南方东英三星电子每日杠杆 2x", "priority": "high", "theme": "AI" },
+    { "ticker": "07709", "name": "南方东英 SK Hynix 每日杠杆 2x", "priority": "high", "theme": "AI" },
+    { "ticker": "01357", "name": "美图公司", "priority": "medium", "theme": "AI" },
+    { "ticker": "00992", "name": "联想集团", "priority": "high", "theme": "AI" },
+    { "ticker": "01810", "name": "小米集团-W", "priority": "high", "theme": "AI" },
+    { "ticker": "09992", "name": "泡泡玛特", "priority": "medium", "theme": "consumer" },
+    { "ticker": "00700", "name": "腾讯控股", "priority": "high", "theme": "AI" }
+  ],
+  "us": [
+    { "ticker": "MU", "name": "Micron", "priority": "high", "theme": "AI" },
+    { "ticker": "ARM", "name": "Arm", "priority": "high", "theme": "AI" },
+    { "ticker": "GOOG", "name": "Alphabet", "priority": "high", "theme": "AI" },
+    { "ticker": "COIN", "name": "Coinbase", "priority": "high", "theme": "crypto" },
+    { "ticker": "U", "name": "Unity", "priority": "medium", "theme": "AI" },
+    { "ticker": "LKNCY", "name": "Luckin Coffee", "priority": "medium", "theme": "consumer" },
+    { "ticker": "BMNR", "name": "BitMine Immersion", "priority": "high", "theme": "crypto" },
+    { "ticker": "RDW", "name": "Redwire", "priority": "medium", "theme": "space" },
+    { "ticker": "JD", "name": "JD.com", "priority": "medium", "theme": "consumer" }
+  ]
+}
