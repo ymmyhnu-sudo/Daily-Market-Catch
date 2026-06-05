@@ -10,9 +10,10 @@ const WATCHLIST_PATH = path.join(ROOT, "config", "watchlists.json");
 const {
   OPENAI_API_KEY,
   FEISHU_WEBHOOK_URL,
-  OPENAI_BASE_URL = "https://api.openai.com/v1",
   OPENAI_MODEL = "gpt-5",
 } = process.env;
+
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1";
 
 if (!OPENAI_API_KEY) {
   throw new Error("Missing OPENAI_API_KEY");
