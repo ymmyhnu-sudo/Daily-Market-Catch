@@ -20,7 +20,7 @@ jobs:
           node-version: "20"
 
       - name: Generate and send daily brief
-      env:
+        env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5' }}
