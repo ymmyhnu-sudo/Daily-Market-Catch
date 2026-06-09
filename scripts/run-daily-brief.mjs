@@ -10,10 +10,9 @@ const WATCHLIST_PATH = path.join(ROOT, "config", "watchlists.json");
 const {
   OPENAI_API_KEY,
   FEISHU_WEBHOOK_URL,
-  OPENAI_MODEL = "gpt-5",
+  OPENAI_BASE_URL = "https://api.openai.com/v1",
+  OPENAI_MODEL = "gpt-5-mini",
 } = process.env;
-
-const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1";
 
 if (!OPENAI_API_KEY) {
   throw new Error("Missing OPENAI_API_KEY");
@@ -88,6 +87,61 @@ function extractSummary(markdown) {
   if (summary) return summary;
 
   return lines.slice(0, 80).join("\n").trim();
+}
+
+function classifyError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes("insufficient_quota")) {
+    return {
+      kind: "openai_quota",
+      summary: "OpenAI API quota exhausted or billing unavailable",
+    };
+  }
+
+  if (message.includes("Missing OPENAI_API_KEY")) {
+    return {
+      kind: "missing_openai_key",
+      summary: "OPENAI_API_KEY secret is missing",
+    };
+  }
+
+  if (message.includes("Missing FEISHU_WEBHOOK_URL")) {
+    return {
+      kind: "missing_feishu_webhook",
+      summary: "FEISHU_WEBHOOK_URL secret is missing",
+    };
+  }
+
+  if (message.includes("Feishu webhook failed")) {
+    return {
+      kind: "feishu_webhook_error",
+      summary: "Feishu webhook request failed",
+    };
+  }
+
+  if (message.includes("OpenAI API error")) {
+    return {
+      kind: "openai_api_error",
+      summary: "OpenAI API request failed",
+    };
+  }
+
+  return {
+    kind: "unexpected_error",
+    summary: "Unexpected runtime error",
+  };
+}
+
+async function writeRunStatus(outputDir, payload) {
+  const statusPath = path.join(outputDir, "run-status.json");
+  await fs.writeFile(statusPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+}
+
+async function appendStepSummary(lines) {
+  const stepSummary = process.env.GITHUB_STEP_SUMMARY;
+  if (!stepSummary) return;
+  await fs.appendFile(stepSummary, `${lines.join("\n")}\n`, "utf8");
 }
 
 async function callOpenAI(prompt, config) {
@@ -199,20 +253,54 @@ async function main() {
     "utf8"
   );
 
-  const stepSummary = process.env.GITHUB_STEP_SUMMARY;
-  if (stepSummary) {
-    const lines = [
-      `# Daily brief sent`,
-      ``,
-      `- File: \`${outputFileName}\``,
-      `- Model: \`${OPENAI_MODEL}\``,
-      `- Output: \`outputs/${outputFileName}\``,
-    ];
-    await fs.appendFile(stepSummary, `${lines.join("\n")}\n`, "utf8");
-  }
+  await writeRunStatus(OUTPUT_DIR, {
+    ok: true,
+    stage: "completed",
+    outputFileName,
+    model: OPENAI_MODEL,
+    createdAt: new Date().toISOString(),
+    responseId: raw.id || null,
+  });
+
+  await appendStepSummary([
+    `# Daily brief sent`,
+    ``,
+    `- File: \`${outputFileName}\``,
+    `- Model: \`${OPENAI_MODEL}\``,
+    `- Output: \`outputs/${outputFileName}\``,
+  ]);
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exit(1);
+  (async () => {
+    await fs.mkdir(OUTPUT_DIR, { recursive: true });
+    const classified = classifyError(error);
+    const message = error instanceof Error ? error.message : String(error);
+
+    await writeRunStatus(OUTPUT_DIR, {
+      ok: false,
+      stage: classified.kind,
+      summary: classified.summary,
+      model: OPENAI_MODEL,
+      createdAt: new Date().toISOString(),
+      errorMessage: message,
+    });
+
+    await appendStepSummary([
+      `# Daily brief failed`,
+      ``,
+      `- Stage: \`${classified.kind}\``,
+      `- Summary: ${classified.summary}`,
+      `- Model: \`${OPENAI_MODEL}\``,
+      `- Error: \`${message}\``,
+      `- Artifact: \`outputs/run-status.json\``,
+    ]);
+  })()
+    .catch((summaryError) => {
+      console.error("Failed to write run status", summaryError);
+    })
+    .finally(() => {
+      console.error(error);
+      process.exit(1);
+    });
 });
